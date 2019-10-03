@@ -11,7 +11,7 @@
 
 ## NOTE: To use this program, you need the SIP disable and the Gatekeeper disable
 
-#### Credit:dm Tools [Apple](https://support.apple.com)
+#### Credit: dm Tools [Apple](https://support.apple.com)
 
 #### Credit: Package chris1111
 
