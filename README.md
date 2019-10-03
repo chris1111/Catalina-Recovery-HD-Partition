@@ -1,7 +1,7 @@
 # Catalina Recovery HD Partition
 
 ## Welcome Catalina Recovery HD Partition.app
-Tools for creating a macOS Catalina Recovery HD Partition on any Volumes.
+- Tools for creating a macOS Catalina Recovery HD Partition on any Volumes.
 
 ### This tools contains the Packages for creating a macOS Catalina Recovery HD Partition on any Volumes.
 
