@@ -8,6 +8,7 @@
 
 ![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/captu848.png)
 
+## NOTE: To use this program, you need the SIP disable and the Gatekeeper disable
 
 #### Credit:dm Tools [Apple](https://support.apple.com)
 
@@ -17,4 +18,4 @@
 
 Follow every steps in the Video
 
-[![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/65962310.png)]()
+[![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/65962310.png)](https://youtu.be/FTRv1N0lRjg)
