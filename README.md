@@ -17,7 +17,7 @@
 
 ### Release Download V1 [➤ Catalina Recovery HD Partition.zip](https://github.com/chris1111/Catalina-Recovery-HD-Partition/releases/tag/V1)
 
-Follow every steps in the Video
+## Follow every steps in the Video
              ⬇︎
 
 [![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/65962310.png)](https://youtu.be/FTRv1N0lRjg)
