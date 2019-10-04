@@ -18,4 +18,4 @@
 
 ## Follow every steps in the Video ⬇︎
 
-[![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/65962310.png)](https://youtu.be/FTRv1N0lRjg)
+[![Modular Image Creation](https://i.ibb.co/K5bFrB5/VIDEO.png)](https://youtu.be/FTRv1N0lRjg)
