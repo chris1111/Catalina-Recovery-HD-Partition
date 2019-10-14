@@ -9,8 +9,8 @@
 ![Modular Image Creation](https://i25.servimg.com/u/f25/18/50/18/69/captu848.png)
 
 ### Terminal command for Mount Recovery HD
-diskutil list
-diskutil mount /dev/disk5s3
+- diskutil list
+- diskutil mount /dev/disk5s3
 
 
 ## NOTE: To use this program, you need the SIP disable and the Gatekeeper disable
