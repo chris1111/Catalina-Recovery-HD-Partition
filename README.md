@@ -1,7 +1,6 @@
-
-
-
 # Catalina Recovery HD Partition
+- Update 08 July 2020 Fix an issue with latest Catalina 10.15.6
+- Change the way for making file system read / write, now using a java script integrate to the package.
 
 ## Welcome Catalina Recovery HD Partition.app
 - This tools contains the Packages for creating a macOS Catalina Recovery HD Partition on any Volumes.
