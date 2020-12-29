@@ -1,0 +1,470 @@
+#!/bin/bash
+# Catalina Recovery HD Partition 
+# Copyright (c) 2019, 2020 chris1111 All right reserved
+# dm Tools Copyright (c) 2017, Apple <www.apple.com.> 
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+# Vars
+apptitle="Catalina Recovery HD Partition"
+version="1.0"
+# Set Icon directory and file 
+iconfile="/Private/tmp/AppIcon.icns"
+cp -rp ./AppIcon.icns /Private/tmp
+Sleep 1
+
+response=$(osascript -e 'tell app "System Events" to display dialog "Tools for creating a Recovery HD Partition of macOS Catalina on external USB Volume or Internal Main volume
+
+Create (USB External Recovery)
+
+Create or repair (Internal Recovery HD)\n\nCancel for Quit" buttons {"Cancel","Internal Recovery HD","USB External Recovery"} default button 3 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+# USB External Recovery
+if [ "$action" == "USB External Recovery" ] ; then
+osascript -e 'display notification "Start External Recovery" with title "'"$apptitle"'" subtitle "User select External Recovery"'
+echo "
+***********************************************************
+USB External Recovery
+***********************************************************  "
+
+
+response=$(osascript -e 'tell app "System Events" to display dialog "*** Disk Utility ***
+
+Format your USB drive in macOS Extended Journaled / GUID
+You will need to quit Disk Utility to continue. 
+Cancel for Quit" buttons {"Cancel","Disk Utility"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+
+### : Disk Utility location
+if [ "$action" == "Disk Utility" ] ; then
+osascript <<EOD
+  tell application "Disk Utility"
+      activate
+  end tell
+repeat
+	if application "Disk Utility" is not running then exit repeat
+	
+end repeat
+EOD
+
+response=$(osascript -e 'tell app "System Events" to display dialog "\n\nSelect USB Key to continue 
+Cancel for Quit" buttons {"Cancel","USB External"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+ fi
+
+fi
+
+
+### : Select Externaldisk location
+if [ "$action" == "USB External" ] ; then
+
+  # Get input folder of externaldisk disk 
+  diskpath=`/usr/bin/osascript << EOT
+    tell application "Finder"
+        activate
+        set folderpath to choose folder default location "/Volumes" with prompt "Select your USB Key"
+    end tell 
+    return (posix path of folderpath) 
+  EOT`
+
+  # Cancel is user selects Cancel
+  if [ ! "$diskpath" ] ; then
+    osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+    exit 0
+  fi
+
+ 
+
+# Confirmation Dialog
+response=$(osascript -e 'tell app "System Events" to display dialog "Please confirm your choice and click OK\n\nDestination: \n'"$diskpath"' \n\n\nRecovery HD will be create on the USB Disk" buttons {"Cancel", "OK"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'" ')
+answer=$(echo $response | grep "OK")
+
+# Cancel is user does not select OK
+if [ ! "$answer" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+DM=./dm
+TARGET="$diskpath"
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+Sleep 2
+
+response=$(osascript -e 'tell app "System Events" to display dialog "Select Install macOS to choose your Install macOS Catalina.app\n\nCancel for Quit" buttons {"Cancel","Install macOS"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+
+# Get image file location
+  imagepath=`/usr/bin/osascript << EOT
+    tell application "Finder"
+        activate
+        set imagefilepath to choose file default location "/Applications" with prompt "Choose the location of your Install macOS Catalina.app"
+    end tell 
+    return (posix path of imagefilepath) 
+  EOT`
+
+  # Cancel is user selects Cancel
+  if [ ! "$imagepath" ] ; then
+    osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+    exit 0
+  fi
+
+hdiutil attach "$imagepath"/Contents/SharedSupport/InstallESD.dmg -noverify -nobrowse -mountpoint /tmp/Installer-OS
+
+hdiutil attach "$imagepath"/Contents/SharedSupport/BaseSystem.dmg -noverify -nobrowse -mountpoint /tmp/Base-OS
+
+
+
+# Remove the image if exist
+if [[ $(mount | awk '$3 == "/Volumes/RecoveryHDMeta" {print $3}') != "" ]]; then
+ hdiutil detach "/Volumes/RecoveryHDMeta"
+fi
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+echo "
+***********************************************************
+Create image for macOS Recovery HD
+***********************************************************  "
+
+# Create the Recovery HD for HFS+J/APFS/CS
+hdiutil create -size 600m -type SPARSE -fs HFS+J -volname RecoveryHDMeta -uid 0 -gid 80 -mode 1775 /tmp/RecoveryHDMeta
+
+# Attach image
+hdiutil attach -nobrowse /tmp/RecoveryHDMeta.sparseimage
+
+
+./rsync -a --progress "$imagepath/Contents/SharedSupport/BaseSystem.dmg" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/AppleDiagnostics.chunklist" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/BaseSystem.chunklist" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/AppleDiagnostics.dmg" "/Volumes/RecoveryHDMeta"
+Sleep 2
+
+echo "
+***********************************************************
+Recovery HD Partition image completed
+***********************************************************  "
+
+# Unmount Image
+hdiutil detach -Force /Volumes/RecoveryHDMeta
+
+# Convert Image
+hdiutil convert /tmp/RecoveryHDMeta.sparseimage -format UDZO -o /tmp/RecoveryHDMeta.dmg
+
+# Unmount image
+hdiutil detach -Force /tmp/Installer-OS
+
+# Unmount image
+hdiutil detach -Force /tmp/Base-OS
+
+
+echo "
+***********************************************************  "
+
+# script Notifications
+osascript -e 'display notification "" with title "Catalina Recovery HD Partition" '
+
+MOUNT_POINT="$(/usr/bin/mktemp -d)"
+/usr/bin/hdiutil attach -nobrowse /tmp/RecoveryHDMeta.dmg -mountpoint "${MOUNT_POINT}"
+echo "Probing Target Volume: ${TARGET}"
+
+FS_TYPE=$(diskutil info "${TARGET}" | awk '$1 == "Type" { print $NF }')
+echo "Target Volume FS: ${FS_TYPE}"
+if [[ "${FS_TYPE}" == "apfs" ]]; then
+    echo "Running ensureRecoveryBooter for APFS target volume: ${TARGET}"
+    "$DM" ensureRecoveryBooter "${TARGET}" -base "${MOUNT_POINT}/BaseSystem.dmg" "${MOUNT_POINT}/BaseSystem.chunklist" -diag "${MOUNT_POINT}/AppleDiagnostics.dmg" "${MOUNT_POINT}/AppleDiagnostics.chunklist" -diagmachineblacklist 0 -installbootfromtarget 0 -slurpappleboot 0 -delappleboot 0 -addkernelcoredump 0
+else
+    echo "Running ensureRecoveryPartition for Non-APFS target volume: ${TARGET}"
+    "$DM" ensureRecoveryPartition "${TARGET}" "${MOUNT_POINT}/BaseSystem.dmg" "${MOUNT_POINT}/BaseSystem.chunklist" "${MOUNT_POINT}/AppleDiagnostics.dmg" "${MOUNT_POINT}/AppleDiagnostics.chunklist" 0 0 0
+fi
+
+echo "Eject ${MOUNT_POINT}"
+/usr/bin/hdiutil eject "${MOUNT_POINT}"
+echo "Delete ${MOUNT_POINT}"
+/bin/rm -rf "${MOUNT_POINT}"
+
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+if [ "/Private/tmp/AppIcon.icns" ]; then
+	rm -rf "/Private/tmp/AppIcon.icns"
+fi
+
+echo " "
+
+# script Notifications
+osascript -e 'display notification "Done" with title "Installation Catalina Recovery HD Partition" '
+
+echo "
+***********************************************************
+   === Installation Catalina Recovery HD Partition ===
+***********************************************************  "
+echo "Done! " 
+
+  exit 0
+fi
+
+fi
+
+# Internal Recovery
+if [ "$action" == "Internal Recovery HD" ] ; then
+osascript -e 'display notification "Start Internal Recovery" with title "'"$apptitle"'" subtitle "User select Internal Recovery"'
+echo "
+***********************************************************
+Internal Recovery
+***********************************************************  "
+
+response=$(osascript -e 'tell app "System Events" to display dialog "The first step is to select your Catalina Internal Disk\n\nSelect Internal Disk to continue Cancel for Quit" buttons {"Cancel","Internal Disk"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+
+### : Select Internaldisk location
+if [ "$action" == "Internal Disk" ] ; then
+
+  # Get input folder of internaldisk disk 
+  diskpath=`/usr/bin/osascript << EOT
+    tell application "Finder"
+        activate
+        set folderpath to choose folder default location "/Volumes" with prompt "Select your Catalina Disk"
+    end tell 
+    return (posix path of folderpath) 
+  EOT`
+
+  # Cancel is user selects Cancel
+  if [ ! "$diskpath" ] ; then
+    osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+    exit 0
+  fi
+
+ 
+
+# Confirmation Dialog
+response=$(osascript -e 'tell app "System Events" to display dialog "Please confirm your choice and click OK\n\nDestination: \n'"$diskpath"' \n\n\nNew recovery HD will be create on the Disk" buttons {"Cancel", "OK"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'" ')
+answer=$(echo $response | grep "OK")
+
+# Cancel is user does not select OK
+if [ ! "$answer" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+DM=./dm
+TARGET="$diskpath"
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+Sleep 2
+
+response=$(osascript -e 'tell app "System Events" to display dialog "Select Install macOS to choose your Install macOS Catalina.app\n\nCancel for Quit" buttons {"Cancel","Install macOS"} default button 2 with title "'"$apptitle"' '"$version"'" with icon POSIX file "'"$iconfile"'"  ')
+
+action=$(echo $response | cut -d ':' -f2)
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+
+# Get image file location
+  imagepath=`/usr/bin/osascript << EOT
+    tell application "Finder"
+        activate
+        set imagefilepath to choose file default location "/Applications" with prompt "Choose the location of your Install macOS Catalina.app"
+    end tell 
+    return (posix path of imagefilepath) 
+  EOT`
+
+  # Cancel is user selects Cancel
+  if [ ! "$imagepath" ] ; then
+    osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+    exit 0
+  fi
+
+hdiutil attach "$imagepath"/Contents/SharedSupport/InstallESD.dmg -noverify -nobrowse -mountpoint /tmp/Installer-OS
+
+hdiutil attach "$imagepath"/Contents/SharedSupport/BaseSystem.dmg -noverify -nobrowse -mountpoint /tmp/Base-OS
+
+
+
+# Remove the image if exist
+if [[ $(mount | awk '$3 == "/Volumes/RecoveryHDMeta" {print $3}') != "" ]]; then
+ hdiutil detach "/Volumes/RecoveryHDMeta"
+fi
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+echo "
+***********************************************************
+Create image for macOS Recovery HD
+***********************************************************  "
+
+# Create the Recovery HD for HFS+J/APFS/CS
+hdiutil create -size 600m -type SPARSE -fs HFS+J -volname RecoveryHDMeta -uid 0 -gid 80 -mode 1775 /tmp/RecoveryHDMeta
+
+# Attach image
+hdiutil attach -nobrowse /tmp/RecoveryHDMeta.sparseimage
+
+
+./rsync -a --progress "$imagepath/Contents/SharedSupport/BaseSystem.dmg" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/AppleDiagnostics.chunklist" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/BaseSystem.chunklist" "/Volumes/RecoveryHDMeta"
+./rsync -a --progress "$imagepath/Contents/SharedSupport/AppleDiagnostics.dmg" "/Volumes/RecoveryHDMeta"
+Sleep 2
+
+echo "
+***********************************************************
+Recovery HD Partition image completed
+***********************************************************  "
+
+# Unmount Image
+hdiutil detach -Force /Volumes/RecoveryHDMeta
+
+# Convert Image
+hdiutil convert /tmp/RecoveryHDMeta.sparseimage -format UDZO -o /tmp/RecoveryHDMeta.dmg
+
+# Unmount image
+hdiutil detach -Force /tmp/Installer-OS
+
+# Unmount image
+hdiutil detach -Force /tmp/Base-OS
+
+
+echo "
+***********************************************************  "
+
+# script Notifications
+osascript -e 'display notification "" with title "Catalina Recovery HD Partition" '
+
+MOUNT_POINT="$(/usr/bin/mktemp -d)"
+/usr/bin/hdiutil attach -nobrowse /tmp/RecoveryHDMeta.dmg -mountpoint "${MOUNT_POINT}"
+echo "Probing Target Volume: ${TARGET}"
+
+FS_TYPE=$(diskutil info "${TARGET}" | awk '$1 == "Type" { print $NF }')
+echo "Target Volume FS: ${FS_TYPE}"
+if [[ "${FS_TYPE}" == "apfs" ]]; then
+    echo "Running ensureRecoveryBooter for APFS target volume: ${TARGET}"
+    "$DM" ensureRecoveryBooter "${TARGET}" -base "${MOUNT_POINT}/BaseSystem.dmg" "${MOUNT_POINT}/BaseSystem.chunklist" -diag "${MOUNT_POINT}/AppleDiagnostics.dmg" "${MOUNT_POINT}/AppleDiagnostics.chunklist" -diagmachineblacklist 0 -installbootfromtarget 0 -slurpappleboot 0 -delappleboot 0 -addkernelcoredump 0
+else
+    echo "Running ensureRecoveryPartition for Non-APFS target volume: ${TARGET}"
+    "$DM" ensureRecoveryPartition "${TARGET}" "${MOUNT_POINT}/BaseSystem.dmg" "${MOUNT_POINT}/BaseSystem.chunklist" "${MOUNT_POINT}/AppleDiagnostics.dmg" "${MOUNT_POINT}/AppleDiagnostics.chunklist" 0 0 0
+fi
+
+echo "Eject ${MOUNT_POINT}"
+/usr/bin/hdiutil eject "${MOUNT_POINT}"
+echo "Delete ${MOUNT_POINT}"
+/bin/rm -rf "${MOUNT_POINT}"
+
+
+if [ "/tmp/RecoveryHDMeta.sparseimage" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.sparseimage"
+fi
+
+
+if [ "/tmp/RecoveryHDMeta.dmg" ]; then
+	rm -rf "/tmp/RecoveryHDMeta.dmg"
+fi
+
+if [ "/Private/tmp/AppIcon.icns" ]; then
+	rm -rf "/Private/tmp/AppIcon.icns"
+fi
+
+echo " "
+
+# script Notifications
+osascript -e 'display notification "Done" with title "Installation Catalina Recovery HD Partition" '
+
+echo "
+***********************************************************
+   === Installation Catalina Recovery HD Partition ===
+***********************************************************  "
+echo "Done! "
+
+  exit 0
+fi
+
+fi
+
+# Exit if Canceled
+if [ "$action" == "Cancel" ] ; then
+  osascript -e 'display notification "Program closing" with title "'"$apptitle"'" subtitle "User cancelled"'
+  exit 0
+fi
+
+
