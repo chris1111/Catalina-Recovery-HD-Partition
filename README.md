@@ -22,4 +22,4 @@
 
 ## Follow every steps in the Video ⬇︎
 
-[![Modular Image Creation](https://i.ibb.co/K5bFrB5/VIDEO.png)](https://youtu.be/FTRv1N0lRjg)
+[![Modular Image Creation](https://i.ibb.co/K5bFrB5/VIDEO.png)](https://youtu.be/1B7l1AZ6I5k)
