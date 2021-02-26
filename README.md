@@ -1,5 +1,7 @@
 # Catalina Recovery HD Partition
 - Update 28 Dec 2020 Change the way for making the Recovery HD.
+- NOTE: This is not for create Big Sur Recovery HD , its work using inside BS system if you have
+a Catalina SSD or create a USB Recovery HD of macOS Catalina.
 
 ## Welcome Catalina Recovery HD Partition.app
 - This tools contains the Packages for creating a macOS Catalina Recovery HD Partition on any Volumes.
