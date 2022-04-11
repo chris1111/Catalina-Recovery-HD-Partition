@@ -20,7 +20,7 @@ a Catalina SSD or create a USB Recovery HD of macOS Catalina.
 
 #### Credit: Package chris1111
 
-### Download V2 [➤ Catalina Recovery HD Partition-Work-On-BS](https://github.com/chris1111/Catalina-Recovery-HD-Partition/releases/tag/V2)
+### Download V2 [➤ Catalina Recovery HD Partitio Work On Big Sur and Monterey](https://github.com/chris1111/Catalina-Recovery-HD-Partition/releases/tag/V2)
 
 ## Follow every steps in the Video ⬇︎
 
